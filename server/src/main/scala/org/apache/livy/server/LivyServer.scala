@@ -20,11 +20,14 @@ package org.apache.livy.server
 import java.io.{BufferedInputStream, InputStream}
 import java.util.concurrent._
 import java.util.EnumSet
+import java.util.Properties
 import javax.servlet._
+
+import org.apache.commons.io.IOUtils
+import org.apache.commons.lang.StringUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.authentication.server._
 import org.eclipse.jetty.servlet.FilterHolder
@@ -32,7 +35,6 @@ import org.scalatra.{NotFound, ScalatraServlet}
 import org.scalatra.metrics.MetricsBootstrap
 import org.scalatra.metrics.MetricsSupportExtensions._
 import org.scalatra.servlet.{MultipartConfig, ServletApiImplicits}
-
 import org.apache.livy._
 import org.apache.livy.server.batch.BatchSessionServlet
 import org.apache.livy.server.interactive.InteractiveSessionServlet
@@ -165,6 +167,56 @@ class LivyServer extends Logging {
       }
     }
 
+    // Servlet for hosting static files such as html, css, and js
+    // Necessary since Jetty cannot set it's resource base inside a jar
+    // Returns 404 if the file does not exist
+    val staticResourceServletQuery = new ScalatraServlet {
+      get("/*") {
+        var fileName = params("splat")
+        val notFoundMsg = "File not found"
+
+        if (fileName.isEmpty) {
+          fileName = "index.html"
+        }
+
+        getClass.getResourceAsStream(s"ui/query/$fileName") match {
+          case is: InputStream => {
+            //n
+            //val staticFileContent = IOUtils.toByteArray(is)
+            contentType = StaticFileServlet.resolveContentType(fileName)
+            new BufferedInputStream(is)
+          }
+          case null => NotFound(notFoundMsg)
+        }
+      }
+      /*{
+        var fileName = params("splat")
+
+        if (fileName.isEmpty) {
+          fileName = "index.html"
+        }
+
+        val resourcePath = s"ui/query/$fileName"
+        val notFoundMsg = "File not found"
+        Option(servletContext.getResourceAsStream(resourcePath)) match {
+          case Some(inputStream) => {
+            val staticFileContent = IOUtils.toByteArray(inputStream)
+            contentType = StaticFileServlet.resolveContentType(resourcePath)
+            staticFileContent
+          }
+          case None          => NotFound(notFoundMsg)
+        }
+      }*/
+
+      private def getResourcePath =
+        StringUtils.isEmpty(splatPath) match {
+          case true  => request.getServletPath
+          case false => request.getServletPath + "/" + splatPath
+        }
+
+      private def splatPath = multiParams("splat").head
+    }
+
     def uiRedirectServlet(path: String) = new ScalatraServlet {
       get("/") {
         redirect(path)
@@ -201,6 +253,7 @@ class LivyServer extends Logging {
               val uiServlet = new UIServlet
               mount(context, uiServlet, "/ui/*")
               mount(context, staticResourceServlet, "/static/*")
+              mount(context, staticResourceServletQuery, "/query/*")
               mount(context, uiRedirectServlet("/ui/"), "/*")
             } else {
               mount(context, uiRedirectServlet("/metrics"), "/*")
@@ -343,4 +396,17 @@ object LivyServer {
     }
   }
 
+}
+
+
+object StaticFileServlet {
+  private val properties: Properties = new Properties()
+  properties.load(classOf[LivyServer].getResourceAsStream("ui/mime.properties"))
+
+  def resolveContentType(resourcePath: String) = {
+    val extension = properties.get(suffix(resourcePath))
+    if (extension != null) extension.toString() else "text/plain"
+  }
+
+  private def suffix(path: String): String = path.reverse.takeWhile(_ != '.').reverse
 }
