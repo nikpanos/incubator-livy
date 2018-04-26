@@ -176,17 +176,19 @@ class LivyServer extends Logging {
         val notFoundMsg = "File not found"
 
         if (fileName.isEmpty) {
-          fileName = "index.html"
+          //fileName = "index.html"
+          redirect("/query/index.html")
         }
-
-        getClass.getResourceAsStream(s"ui/query/$fileName") match {
-          case is: InputStream => {
-            //n
-            //val staticFileContent = IOUtils.toByteArray(is)
-            contentType = StaticFileServlet.resolveContentType(fileName)
-            new BufferedInputStream(is)
+        else {
+          getClass.getResourceAsStream(s"ui/query/$fileName") match {
+            case is: InputStream => {
+              //n
+              //val staticFileContent = IOUtils.toByteArray(is)
+              contentType = StaticFileServlet.resolveContentType(fileName)
+              new BufferedInputStream(is)
+            }
+            case null => NotFound(notFoundMsg)
           }
-          case null => NotFound(notFoundMsg)
         }
       }
       /*{
@@ -254,7 +256,7 @@ class LivyServer extends Logging {
               mount(context, uiServlet, "/ui/*")
               mount(context, staticResourceServlet, "/static/*")
               mount(context, staticResourceServletQuery, "/query/*")
-              mount(context, uiRedirectServlet("/ui/"), "/*")
+              mount(context, uiRedirectServlet("/query/"), "/*")
             } else {
               mount(context, uiRedirectServlet("/metrics"), "/*")
             }
