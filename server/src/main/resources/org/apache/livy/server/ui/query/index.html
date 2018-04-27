@@ -1,10 +1,11 @@
+
 <!doctype html>
 <html class="no-js" lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Foundation for Sites</title>
+    <title>Sparql Query</title>
     <link rel="stylesheet" href="css/foundation.css">
     <link rel="stylesheet" href="css/app.css">
 
@@ -13,6 +14,7 @@
     var batchId;
     function myFunction(sparqlQuery) {
 
+      var urlVariable = "http://datacron1.ds.unipi.gr:8998/batches";
 
   alert("myalert"+sparqlQuery)
 
@@ -22,21 +24,20 @@
   img.src = "img/loader.gif";
   var src = document.getElementById("imageLoading");
   src.appendChild(img);
-  var serverUrl = "http://datacron1.ds.unipi.gr:8998/batches";
 
 $.ajax({
 
     type: "POST",
     dataType: "json",
-    url: serverUrl,
-    data: JSON.stringify({ "className": "gr.unipi.datacron.App", "file" : "file:///home/pnikitopoulos/query/query.jar", "args" : [sparqlQuery] }),
+    url: urlVariable,
+    data: JSON.stringify({ "className": "gr.unipi.datacron.App", "file" : "file:///mnt/storage/sparql/query.jar", "args" : ["/mnt/storage/sparql/params/SparqlWeb.hocon"] ,"conf": {"spark.driver.extraJavaOptions": "-Dquery.sparql.source='"+sparqlQuery+"' -Doutput.dirOutput.path='/query-results/"+Date.now()+"/' -Doutput.dirOutput.format='parquet'"}}),
     contentType: "application/json",
     crossDomain: true,
     beforeSend: function (jqXHR) {
 // set request headers here rather than in the ajax 'headers' object
-//jqXHR.setRequestHeader('Access-Control-Allow-Origin', ' http://localhost:8080');
+//jqXHR.setRequestHeader('Access-Control-Allow-Origin', ' *');
 //jqXHR.setRequestHeader('Access-Control-Allow-Methods', '*');
-//jqXHR.setRequestHeader('Access-Control-Allow-Headers', 'Access-Control-Allow-Headers: X-Requested-With, content-type, access-control-allow-origin, access-control-allow-methods, access-control-allow-headers');
+//jqXHR.setRequestHeader('Access-Control-Allow-Headers', '*');
 },
     success: function (sparqlQuery) {
         // Success callback
@@ -55,7 +56,7 @@ $.ajax({
      $.ajax({
          type: "GET",
          dataType: "json",
-         url: serverUrl+batchId+"/state",
+         url: urlVariable+batchId+"/state",
          //data: JSON.stringify({ "id": batchId}),
          contentType: "application/json",
          crossDomain: true,
@@ -90,23 +91,20 @@ $.ajax({
 
   </head>
   <body>
-    <div class="grid-container" style="text-align:center">
-      <div class="grid-x grid-padding-x" >
-        <div class="large-12 cell">
-          <h1>SPARQL Panel</h1>
-        </div>
-        <div class="large-12 large-centered cell">
-          <textarea  placeholder="Query"  rows="10" id="sparqlQuery"></textarea>
-            <p><a href="#" class="button" onclick="myFunction(document.getElementById('sparqlQuery').value)">Submit Query</a><br/></p>
-            <div id ="imageLoading"></div>
-        </div>
-      </div>
+    <img src="img/logo.png" alt="Datacron Logo" height="50%" >
+
+    <div style="text-align:center;margin-left:2%;margin-right:2%">
+      <h1>Distributed SPARQL Query Execution</h1>
+    <textarea  placeholder="SPARQL Query"  rows="10" id="sparqlQuery"></textarea>
+      <p><a href="#" class="button" onclick="myFunction(document.getElementById('sparqlQuery').value)">Submit Query</a><br/></p>
+      <div id ="imageLoading"></div>
       <p class="output" id="output"></p>
+    </div>
+
 
     <script src="js/vendor/jquery.js"></script>
     <script src="js/vendor/what-input.js"></script>
     <script src="js/vendor/foundation.js"></script>
     <script src="js/app.js"></script>
-    </div>
   </body>
 </html>
