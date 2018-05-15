@@ -25,12 +25,21 @@
   var src = document.getElementById("imageLoading");
   src.appendChild(img);
 
+  var timestamp = Date.now();
+
+  $('.mainButton').hide();
+  $('.button1').empty();
+  $('.button2').empty();
+  $('.button3').empty();
+  $('.output').append("Results will be stored in: <a href='http://datacron1.ds.unipi.gr:50070/explorer.html#/query-results/"+timestamp+"' style='color:#ff7c81' target='_blank'>http://datacron1.ds.unipi.gr:50070/explorer.html#/query-results/"+timestamp+"</a>");
+  $('.outputlog').empty();
+
 $.ajax({
 
     type: "POST",
     dataType: "json",
     url: urlVariable,
-    data: JSON.stringify({ "className": "gr.unipi.datacron.App", "file" : "file:///mnt/storage/sparql/query.jar", "args" : ["/mnt/storage/sparql/params/SparqlWeb.hocon"] ,"conf": {"spark.driver.extraJavaOptions": "-Dquery.sparql.source='"+sparqlQuery+"' -Doutput.dirOutput.path='/query-results/"+Date.now()+"/' -Doutput.dirOutput.format='parquet'"}}),
+    data: JSON.stringify({ "className": "gr.unipi.datacron.App", "file" : "file:///mnt/storage/sparql/query.jar", "args" : ["/mnt/storage/sparql/params/SparqlWeb.hocon"] ,"conf": {"spark.driver.extraJavaOptions": "-Dquery.sparql.source='"+sparqlQuery+"' -Doutput.dirOutput.path='/query-results/"+timestamp+"/' -Doutput.dirOutput.format='parquet'"}}),
     contentType: "application/json",
     crossDomain: true,
     beforeSend: function (jqXHR) {
@@ -48,15 +57,17 @@ $.ajax({
     }
 
 }).then(function(data) {
+
    batchId = data.id;
    var batchStatus=data.state;
+   var batchAppId;
 
    var intervalId = setInterval(function() {
 
      $.ajax({
          type: "GET",
          dataType: "json",
-         url: urlVariable+batchId+"/state",
+         url: urlVariable+"/"+batchId,
          //data: JSON.stringify({ "id": batchId}),
          contentType: "application/json",
          crossDomain: true,
@@ -68,17 +79,52 @@ $.ajax({
  }
 }
 ).then(function(innerdata) {
-   batchStatus=innerdata.state;
+   batchStatus = innerdata.state;
 
    if("success"===batchStatus){
+     batchAppId = innerdata.appId;
+     var batchLog;
+
+    //getting log part
+     $.ajax({
+         type: "GET",
+         dataType: "json",
+         url: urlVariable+"/"+batchId+"/log",
+         contentType: "application/json",
+         crossDomain: true,
+     }).then(function(logdata) {
+      batchLog = logdata.log;
+    });
+
+     var logtobeshown = "";
+     for(var i = 0; i < batchLog.length; i++) {
+       if("*/*/*/*/*/*/*/*/*/*/"===batchLog[i])
+       {
+         for(var j=i+1;j< batchLog.length; j++){
+           logtobeshown = logtobeshown + batchLog[j];
+         }
+         break;
+       }
+    }
+    //-----------------------------------------------
+
      img.parentNode.removeChild(img);
-     $('.output').append("Success");
+     $('.output').empty();
+
+     $('.mainButton').show();
+     $('.button1').append("<p><a href='http://datacron1.ds.unipi.gr:50070/explorer.html#/query-results/"+timestamp+"' class='success button' target='_blank' >Results on HDFS</a></p>");
+     $('.button2').append("<p><a href='http://datacron1.ds.unipi.gr:8088/proxy/"+batchAppId+"/' class='success button' target='_blank' >Spark job Details</a></p>");
+     $('.button3').append("<p><a href='#' class='success button' target='_blank' >Submit Query</a></p>");
+     $('.outputlog').append(logtobeshown);
+
      clearInterval(intervalId);
    }
 
    if("dead"===batchStatus){
+       $('.mainButton').show();
      img.parentNode.removeChild(img);
-     $('output').append("Dead");
+     $('.output').empty();
+     $('.output').append("Dead");
      clearInterval(intervalId);
    }
 });
@@ -95,12 +141,46 @@ $.ajax({
 
     <div style="text-align:center;margin-left:2%;margin-right:2%">
       <h1>Distributed SPARQL Query Execution</h1>
-    <textarea  placeholder="SPARQL Query"  rows="10" id="sparqlQuery"></textarea>
-      <p><a href="#" class="button" onclick="myFunction(document.getElementById('sparqlQuery').value)">Submit Query</a><br/></p>
+    <textarea  placeholder="SPARQL Query"  rows="12" id="sparqlQuery"></textarea>
+
+    <div class="grid-x grid-padding-x">
+      <div class="large-6 medium-6 cell">
+        <textarea  placeholder="minimum time (YYYY-MM-ddTHH:mm:ss)"  rows="1" id="filters"></textarea>
+
+      </div>
+      <div class="large-6 medium-6 cell">
+        <textarea  placeholder="maximum time (YYYY-MM-ddTHH:mm:ss)"  rows="1" id="filters"></textarea>
+
+      </div>
+      <div class="large-6 medium-6 cell">
+        <textarea  placeholder="spatial box lower left point (Latitude Longitude)"  rows="1" id="filters"></textarea>
+
+      </div>
+      <div class="large-6 medium-6 cell">
+        <textarea  placeholder="spatial box upper right point (Latitude Longitude)"  rows="1" id="filters"></textarea>
+
+      </div>
+    </div>
+
+
+      <p><a href="#" class="button mainButton" id="mainButton" onclick="myFunction(document.getElementById('sparqlQuery').value)">Submit Query</a><br/></p>
       <div id ="imageLoading"></div>
       <p class="output" id="output"></p>
     </div>
 
+    <div class="grid-x grid-padding-x">
+      <div class="large-4 medium-4 cell button1" style="text-align:center;">
+      </div>
+      <div class="large-4 medium-4 cell button2" style="text-align:center;">
+      </div>
+      <div class="large-4 medium-4 cell button3" style="text-align:center;">
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-left:2%;margin-right:2%">
+     <div style="height: 110px;overflow: auto;" class="outputlog" id="outputlog">
+   </div>
+  </div>
 
     <script src="js/vendor/jquery.js"></script>
     <script src="js/vendor/what-input.js"></script>
