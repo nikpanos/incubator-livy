@@ -84,18 +84,11 @@ $.ajax({
      }).then(function(logdata) {
        alert(logdata.log);
 
-      var batchLog = logdata.log;
-      var logtobeshown = "";
-      for(var i = 0; i < batchLog.length; i++) {
-        if("*/*/*/*/*/*/*/*/*/*/"===batchLog[i])
-        {
-          for(var j=i+1;j< batchLog.length; j++){
-            logtobeshown = logtobeshown + batchLog[j];
-          }
-          break;
-        }
-     }
-          $('.outputlog').append(logtobeshown);
+       var batchLog = logdata.log;
+
+
+
+          $('.outputlog').append(batchLog.split("*/*/*/*/*/*/*/*/*/*/").pop());
     });
 
 
