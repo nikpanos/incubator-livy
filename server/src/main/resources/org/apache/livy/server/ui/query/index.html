@@ -47,15 +47,7 @@ $.ajax({
 //jqXHR.setRequestHeader('Access-Control-Allow-Origin', ' *');
 //jqXHR.setRequestHeader('Access-Control-Allow-Methods', '*');
 //jqXHR.setRequestHeader('Access-Control-Allow-Headers', '*');
-},
-    success: function (sparqlQuery) {
-        // Success callback
-        alert("success");
-    },
-    error: function(data) {
-        alert("fail"+data);
-    }
-
+}
 }).then(function(data) {
 
    batchId = data.id;
@@ -83,7 +75,6 @@ $.ajax({
 
    if("success"===batchStatus){
      batchAppId = innerdata.appId;
-     var batchLog;
 
     //getting log part
      $.ajax({
@@ -93,19 +84,22 @@ $.ajax({
          contentType: "application/json",
          crossDomain: true,
      }).then(function(logdata) {
-      batchLog = logdata.log;
+
+      var batchLog = logdata.log;
+      var logtobeshown = "";
+      for(var i = 0; i < batchLog.length; i++) {
+        if("*/*/*/*/*/*/*/*/*/*/"===batchLog[i])
+        {
+          for(var j=i+1;j< batchLog.length; j++){
+            logtobeshown = logtobeshown + batchLog[j];
+          }
+          break;
+        }
+     }
+          $('.outputlog').append(logtobeshown);
     });
 
-     var logtobeshown = "";
-     for(var i = 0; i < batchLog.length; i++) {
-       if("*/*/*/*/*/*/*/*/*/*/"===batchLog[i])
-       {
-         for(var j=i+1;j< batchLog.length; j++){
-           logtobeshown = logtobeshown + batchLog[j];
-         }
-         break;
-       }
-    }
+
     //-----------------------------------------------
 
      img.parentNode.removeChild(img);
@@ -115,8 +109,6 @@ $.ajax({
      $('.button1').append("<p><a href='http://datacron1.ds.unipi.gr:50070/explorer.html#/query-results/"+timestamp+"' class='success button' target='_blank' >Results on HDFS</a></p>");
      $('.button2').append("<p><a href='http://datacron1.ds.unipi.gr:8088/proxy/"+batchAppId+"/' class='success button' target='_blank' >Spark job Details</a></p>");
      $('.button3').append("<p><a href='#' class='success button' target='_blank' >Submit Query</a></p>");
-     $('.outputlog').append(logtobeshown);
-
      clearInterval(intervalId);
    }
 
