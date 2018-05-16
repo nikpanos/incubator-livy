@@ -16,8 +16,6 @@
 
       var urlVariable = "http://datacron1.ds.unipi.gr:8998/batches";
 
-  alert("myalert"+sparqlQuery)
-
   document.getElementById("output").innerHTML='';
 
   var img = document.createElement("img");
@@ -84,6 +82,7 @@ $.ajax({
          contentType: "application/json",
          crossDomain: true,
      }).then(function(logdata) {
+       alert(logdata.log);
 
       var batchLog = logdata.log;
       var logtobeshown = "";
