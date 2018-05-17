@@ -82,13 +82,10 @@ $.ajax({
          contentType: "application/json",
          crossDomain: true,
      }).then(function(logdata) {
-       alert(logdata.log);
+       var batchLog = JSON.stringify(logdata.log);
+       batchLog = batchLog.split("*/*/*/*/*/*/*/*/*/*/").pop().replace(/\",\"/g, "<br />");
 
-       var batchLog = logdata.log;
-
-
-
-          $('.outputlog').append(batchLog.split("*/*/*/*/*/*/*/*/*/*/").pop());
+       $('.outputlog').append(batchLog.substring(0,batchLog.indexOf("/*/*/*/*/*/*/*/*/*/*")));
     });
 
 
@@ -161,8 +158,9 @@ $.ajax({
       </div>
     </div>
 
-    <div style="text-align:center;margin-left:2%;margin-right:2%">
-     <div style="height: 110px;overflow: auto;" class="outputlog" id="outputlog">
+
+    <div style="margin-left:2%;margin-right:2%">
+     <div style="height: auto;overflow-x: scroll;overflow-y: hidden;white-space: nowrap;" class="outputlog" id="outputlog">
    </div>
   </div>
 
