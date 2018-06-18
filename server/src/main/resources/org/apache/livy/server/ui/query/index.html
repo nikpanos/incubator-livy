@@ -13,8 +13,6 @@
     <script>
     var batchId;
     function myFunction(sparqlQuery,minimumTime,maximumTime,lowerLeft,upperRight) {
-      alert(sparqlQuery);
-
       sparqlQuery = sparqlQuery.replace(/'/g, "\"");
 
       lowerLeftLat = lowerLeft.substring(0,lowerLeft.indexOf(" "));
