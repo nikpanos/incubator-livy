@@ -12,7 +12,15 @@
 
     <script>
     var batchId;
-    function myFunction(sparqlQuery) {
+    function myFunction(sparqlQuery,minimumTime,maximumTime,lowerLeft,upperRight) {
+      alert(sparqlQuery);
+
+      sparqlQuery = sparqlQuery.replace(/'/g, "\"");
+
+      lowerLeftLat = lowerLeft.substring(0,lowerLeft.indexOf(" "));
+      lowerLeftLon = lowerLeft.split(" ").pop();
+      upperRightLat = upperRight.substring(0,upperRight.indexOf(" "));
+      upperRightLon = upperRight.split(" ").pop();
 
       var urlVariable = "http://datacron1.ds.unipi.gr:8998/batches";
 
@@ -37,7 +45,7 @@ $.ajax({
     type: "POST",
     dataType: "json",
     url: urlVariable,
-    data: JSON.stringify({ "className": "gr.unipi.datacron.App", "file" : "file:///mnt/storage/sparql/query.jar", "args" : ["/mnt/storage/sparql/params/SparqlWeb.hocon"] ,"conf": {"spark.driver.extraJavaOptions": "-Dquery.sparql.source='"+sparqlQuery+"' -Doutput.dirOutput.path='/query-results/"+timestamp+"/' -Doutput.dirOutput.format='parquet'"}}),
+    data: JSON.stringify({ "className": "gr.unipi.datacron.App", "file" : "file:///mnt/storage/sparql/query.jar", "args" : ["/mnt/storage/sparql/params/SparqlWeb.hocon"] ,"conf": {"spark.driver.extraJavaOptions": "-Dquery.sparql.source='"+sparqlQuery+"' -Doutput.dirOutput.path='/query-results/"+timestamp+"/' -Doutput.dirOutput.format='parquet' -Dquery.predicates.lat_lower="+lowerLeftLat+" -Dquery.predicates.lon_lower="+lowerLeftLon+" -Dquery.predicates.lat_upper="+upperRightLat+" -Dquery.predicates.lon_upper="+upperRightLon+" -Dquery.predicates.time_lower="+minimumTime+" -Dquery.predicates.time_upper="+maximumTime+" "}}),
     contentType: "application/json",
     crossDomain: true,
     beforeSend: function (jqXHR) {
@@ -97,7 +105,7 @@ $.ajax({
      $('.mainButton').show();
      $('.button1').append("<p><a href='http://datacron1.ds.unipi.gr:50070/explorer.html#/query-results/"+timestamp+"' class='success button' target='_blank' >Results on HDFS</a></p>");
      $('.button2').append("<p><a href='http://datacron1.ds.unipi.gr:8088/proxy/"+batchAppId+"/' class='success button' target='_blank' >Spark job Details</a></p>");
-     $('.button3').append("<p><a href='#' class='success button' target='_blank' >Submit Query</a></p>");
+     $('.button3').append("<p><a href='#' class='success button' target='_blank' disabled>Download</a></p>");
      clearInterval(intervalId);
    }
 
@@ -122,29 +130,29 @@ $.ajax({
 
     <div style="text-align:center;margin-left:2%;margin-right:2%">
       <h1>Distributed SPARQL Query Execution</h1>
-    <textarea  placeholder="SPARQL Query"  rows="12" id="sparqlQuery"></textarea>
+    <textarea style="font-family:'Courier New'" placeholder="SPARQL Query"  rows="12" id="sparqlQuery"></textarea>
 
     <div class="grid-x grid-padding-x">
       <div class="large-6 medium-6 cell">
-        <textarea  placeholder="minimum time (YYYY-MM-ddTHH:mm:ss)"  rows="1" id="filters"></textarea>
+        <textarea style="font-family:'Courier New'" placeholder="minimum time (YYYY-MM-ddTHH:mm:ss)"  rows="1" id="filter1"></textarea>
 
       </div>
       <div class="large-6 medium-6 cell">
-        <textarea  placeholder="maximum time (YYYY-MM-ddTHH:mm:ss)"  rows="1" id="filters"></textarea>
+        <textarea style="font-family:'Courier New'" placeholder="maximum time (YYYY-MM-ddTHH:mm:ss)"  rows="1" id="filter2"></textarea>
 
       </div>
       <div class="large-6 medium-6 cell">
-        <textarea  placeholder="spatial box lower left point (Latitude Longitude)"  rows="1" id="filters"></textarea>
+        <textarea style="font-family:'Courier New'" placeholder="spatial box lower left point (Latitude Longitude)"  rows="1" id="filter3"></textarea>
 
       </div>
       <div class="large-6 medium-6 cell">
-        <textarea  placeholder="spatial box upper right point (Latitude Longitude)"  rows="1" id="filters"></textarea>
+        <textarea style="font-family:'Courier New'" placeholder="spatial box upper right point (Latitude Longitude)"  rows="1" id="filter4"></textarea>
 
       </div>
     </div>
 
 
-      <p><a href="#" class="button mainButton" id="mainButton" onclick="myFunction(document.getElementById('sparqlQuery').value)">Submit Query</a><br/></p>
+      <p><a href="#" class="button mainButton" id="mainButton" onclick="myFunction(document.getElementById('sparqlQuery').value,document.getElementById('filter1').value,document.getElementById('filter2').value,document.getElementById('filter3').value,document.getElementById('filter4').value)">Submit Query</a><br/></p>
       <div id ="imageLoading"></div>
       <p class="output" id="output"></p>
     </div>
@@ -160,7 +168,8 @@ $.ajax({
 
 
     <div style="margin-left:2%;margin-right:2%">
-     <div style="height: auto;overflow-x: scroll;overflow-y: hidden;white-space: nowrap;" class="outputlog" id="outputlog">
+      <h4 style="text-align:center;color:white;">Execution Results</h4>
+     <div style="background-color:#ffffff;height: auto;overflow-x: scroll;overflow-y:hidden;white-space: pre;font-family:'Courier New'" class="outputlog" id="outputlog">
    </div>
   </div>
 
